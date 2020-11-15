@@ -1,0 +1,22 @@
+{
+  "name": "self-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "standard": {
+    "plugins": [
+      "html"
+    ],
+    "parser": "babel-eslint"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "babel-eslint": "^10.1.0",
+    "standard": "^16.0.2"
+  }
+}
