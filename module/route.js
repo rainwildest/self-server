@@ -1,23 +1,62 @@
+
 const url = require('url')
+const fs = require('fs')
+const path = require('path')
 
+// 根据后缀名获取文件类型
+const getFileMime = (extname) => {
+    const data = fs.readFileSync('./mime.json')
+    const mimeObj = JSON.parse(data.toString())
 
+    return mimeObj[extname]
+}
+
+// 静态web服务方法
+const initStatic = (req, res, staticPath) => {
+    // 1. 获取地址
+    let pathname = url.parse(req.url).pathname
+    pathname = (pathname === '/'?'/index.html' : pathname)
+    const extname = path.extname(pathname)
+    console.log(`./${staticPath}${pathname}`)
+    // 2. 通过fs模块读取文件
+    try {
+        const data = fs.readFileSync(`./${staticPath}${pathname}`)
+        if(data) {
+            const mime = getFileMime(extname)
+            res.writeHead(200, {'Content-type': `${mime};charset="utf-8"`})
+            // res.write(data)
+            res.end(data)
+        }
+        console.log(data)
+    } catch (error) {
+        // res.writeHead(200, {'Content-type': `text/html;charset="utf-8"`})
+        // res.end('404')
+    }
+}
+const changeRes = (res) => {
+    res.send = data => {
+        res.writeHead(200, {'Content-type':'text/html;charset="utf-8"'})
+        res.end(data)
+    }
+}
 const server = ()=>{
-    const g = {}
-    g._get = {}
-    g._post = {}
+    const g = {
+        _get: {},
+        _post: {},
+        _staticPath: 'public' //静态web目录
+    }
     
     const app = (req, res)=> {
         // 封装一个发送结果的函数
-        res.send = data => {
-            res.writeHead(200, {'Content-type':'text/html;charset="utf-8"'})
-            res.end(data)
-        }
+        changeRes(res)
+
+        // 配置静态web的服务器
+        initStatic(req, res, g._staticPath)
 
         const pathname = url.parse(req.url).pathname
 
         // 获取请求类型
         const method = req.method.toLowerCase()
-
         if(g[`_${method}`][pathname]) {
             if(method === "get"){
                 // 执行方法
@@ -32,24 +71,29 @@ const server = ()=>{
                     req.body = postData
                     g._post[pathname](req, res)
                 })
-                g._post[pathname](req, res)
             }
-            
         } else {
-            res.writeHeader(404, {'Content-type':'text/html;charset="utf-8"'})
+            res.writeHead(404, {'Content-type':'text/html;charset="utf-8"'})
             res.end('页面不存在')
+            console.log('error-404')
         }
     }
 
+    // get 请求
     app.get = (str, cb)=>{
         // 注册方法
         g._get[str]=cb
     }
 
+    // post 请求
     app.post = (str, cb)=>{
         g._post[str]=cb
     }
 
+    // 配置静态web服务目录
+    app.static = (path) => {
+        g._staticPath = path
+    }
     return app
 }
 
