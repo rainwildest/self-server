@@ -13,11 +13,12 @@ const getFileMime = (extname) => {
 
 // 静态web服务方法
 const initStatic = (req, res, staticPath) => {
+    let isFinish = false
+
     // 1. 获取地址
     let pathname = url.parse(req.url).pathname
     pathname = (pathname === '/'?'/index.html' : pathname)
     const extname = path.extname(pathname)
-    console.log(`./${staticPath}${pathname}`)
     // 2. 通过fs模块读取文件
     try {
         const data = fs.readFileSync(`./${staticPath}${pathname}`)
@@ -27,18 +28,16 @@ const initStatic = (req, res, staticPath) => {
             // res.write(data)
             res.end(data)
         }
-        console.log(data)
+        isFinish = true
     } catch (error) {
         // res.writeHead(200, {'Content-type': `text/html;charset="utf-8"`})
         // res.end('404')
+        isFinish = false
     }
+
+    return isFinish
 }
-const changeRes = (res) => {
-    res.send = data => {
-        res.writeHead(200, {'Content-type':'text/html;charset="utf-8"'})
-        res.end(data)
-    }
-}
+
 const server = ()=>{
     const g = {
         _get: {},
@@ -48,10 +47,15 @@ const server = ()=>{
     
     const app = (req, res)=> {
         // 封装一个发送结果的函数
-        changeRes(res)
+        res.send = data => {
+            res.writeHead(200, {'Content-type':'text/html;charset="utf-8"'})
+            res.end(data)
+        }
 
         // 配置静态web的服务器
-        initStatic(req, res, g._staticPath)
+        const isFinish = initStatic(req, res, g._staticPath)
+        // 如果已经请求了静态文件则退出，不然会出错
+        if(isFinish) return 0 
 
         const pathname = url.parse(req.url).pathname
 
