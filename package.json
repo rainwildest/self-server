@@ -9,9 +9,6 @@
   "keywords": [],
   "author": "",
   "standard": {
-    "plugins": [
-      "html"
-    ],
     "parser": "babel-eslint"
   },
   "license": "ISC",
